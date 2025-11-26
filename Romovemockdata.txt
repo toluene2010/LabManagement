@@ -1,0 +1,10 @@
+# Step 1: Delete mock data file
+rm src/data/mockData.ts
+
+# Step 2: In masterDataStore.ts, change:
+products: MOCK_PRODUCTS,      →  products: [],
+testMethods: MOCK_TEST_METHODS, →  testMethods: [],
+
+# Step 3: Remove the import line
+# Step 4: Clear browser localStorage
+# Step 5: Deploy!
