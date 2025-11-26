@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FlaskConical, Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const Login: React.FC = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -18,14 +18,14 @@ export const Login: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const success = await login(username, password);
+            const success = await login(email, password);
             if (success) {
                 navigate('/');
             } else {
-                setError('Invalid credentials. Try "admin" / "admin123"');
+                setError('Invalid email or password. Please try again.');
             }
         } catch (err) {
-            setError('An error occurred during login');
+            setError('An error occurred during login. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -110,15 +110,7 @@ export const Login: React.FC = () => {
                         </button>
                     </form>
 
-                    <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <div className="text-center text-xs text-slate-400">
-                            <p>Demo Credentials:</p>
-                            <div className="flex justify-center gap-4 mt-2">
-                                <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">admin / admin123</span>
-                                <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">analyst / analyst123</span>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>

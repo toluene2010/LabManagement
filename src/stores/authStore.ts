@@ -1,74 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '../types';
-
-interface UserWithAuth extends User {
-    password: string;
-}
+import { supabase } from '../lib/supabase';
 
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
     sessionId: string | null;
-    users: UserWithAuth[];
-    login: (username: string, password: string) => Promise<boolean>;
-    logout: () => void;
+    login: (email: string, password: string) => Promise<boolean>;
+    logout: () => Promise<void>;
     hasPermission: (resource: string, action: string) => boolean;
-    addUser: (user: User, password: string) => void;
-    updateUser: (id: string, updates: Partial<User>) => void;
-    deleteUser: (id: string) => void;
-    resetPassword: (id: string, newPassword: string) => void;
+    checkSession: () => Promise<void>;
 }
-
-const INITIAL_USERS: UserWithAuth[] = [
-    {
-        id: '1',
-        username: 'admin',
-        password: 'admin123',
-        email: 'admin@pharma.com',
-        firstName: 'System',
-        lastName: 'Administrator',
-        role: 'admin',
-        department: 'IT',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        permissions: [{ resource: '*', actions: ['*'] }]
-    },
-    {
-        id: '2',
-        username: 'qa_manager',
-        password: 'qa123',
-        email: 'qa@pharma.com',
-        firstName: 'Quality',
-        lastName: 'Manager',
-        role: 'qa_manager',
-        department: 'Quality Assurance',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        permissions: [
-            { resource: 'samples', actions: ['create', 'read', 'update', 'approve'] },
-            { resource: 'products', actions: ['create', 'read', 'update'] },
-            { resource: 'results', actions: ['read', 'approve'] },
-            { resource: 'audit', actions: ['read'] }
-        ]
-    },
-    {
-        id: '3',
-        username: 'analyst',
-        password: 'analyst123',
-        email: 'analyst@pharma.com',
-        firstName: 'Lab',
-        lastName: 'Analyst',
-        role: 'analyst',
-        department: 'Quality Control Lab',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        permissions: [
-            { resource: 'samples', actions: ['read', 'update'] },
-            { resource: 'results', actions: ['create', 'read', 'update'] }
-        ]
-    }
-];
 
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -76,71 +19,93 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             sessionId: null,
-            users: INITIAL_USERS,
 
-            login: async (username: string, password: string) => {
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 500));
+            login: async (email: string, password: string) => {
+                try {
+                    // Sign in with Supabase Auth
+                    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
 
-                const state = get();
-                const foundUser = state.users.find(u => u.username === username && u.password === password);
+                    if (authError) {
+                        console.error('Login error:', authError);
+                        return false;
+                    }
 
-                if (foundUser) {
-                    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    if (!authData.user) {
+                        return false;
+                    }
 
-                    // Remove password from user object in state
-                    const { password: _, ...userWithoutPassword } = foundUser;
+                    // Fetch user profile from profiles table
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', authData.user.id)
+                        .single();
+
+                    if (profileError) {
+                        console.error('Profile fetch error:', profileError);
+                        return false;
+                    }
+
+                    // Map profile to User type
+                    const user: User = {
+                        id: profile.id,
+                        username: profile.username || email,
+                        email: authData.user.email || email,
+                        firstName: profile.first_name || '',
+                        lastName: profile.last_name || '',
+                        role: profile.role || 'analyst',
+                        department: profile.department || '',
+                        isActive: profile.is_active ?? true,
+                        createdAt: profile.created_at,
+                        lastLogin: new Date().toISOString(),
+                        permissions: getRolePermissions(profile.role),
+                    };
 
                     set({
-                        user: { ...userWithoutPassword, lastLogin: new Date().toISOString() },
+                        user,
                         isAuthenticated: true,
-                        sessionId
+                        sessionId: authData.session?.access_token || null,
                     });
 
                     // Log audit trail
-                    const auditLog = {
-                        id: `audit_${Date.now()}`,
-                        timestamp: new Date().toISOString(),
-                        userId: foundUser.id,
-                        userName: `${foundUser.firstName} ${foundUser.lastName}`,
-                        action: 'login' as const,
-                        entityType: 'session',
-                        entityId: sessionId,
-                        sessionId
-                    };
-
-                    const existingLogs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
-                    localStorage.setItem('auditLogs', JSON.stringify([auditLog, ...existingLogs]));
+                    await supabase.from('audit_logs').insert({
+                        user_id: user.id,
+                        action: 'login',
+                        entity_type: 'session',
+                        entity_id: authData.session?.access_token,
+                        details: { email },
+                    });
 
                     return true;
+                } catch (error) {
+                    console.error('Login exception:', error);
+                    return false;
                 }
-
-                return false;
             },
 
-            logout: () => {
+            logout: async () => {
                 const state = get();
 
-                if (state.user && state.sessionId) {
-                    const auditLog = {
-                        id: `audit_${Date.now()}`,
-                        timestamp: new Date().toISOString(),
-                        userId: state.user.id,
-                        userName: `${state.user.firstName} ${state.user.lastName}`,
-                        action: 'logout' as const,
-                        entityType: 'session',
-                        entityId: state.sessionId,
-                        sessionId: state.sessionId
-                    };
-
-                    const existingLogs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
-                    localStorage.setItem('auditLogs', JSON.stringify([auditLog, ...existingLogs]));
+                if (state.user) {
+                    // Log audit trail
+                    await supabase.from('audit_logs').insert({
+                        user_id: state.user.id,
+                        action: 'logout',
+                        entity_type: 'session',
+                        entity_id: state.sessionId,
+                    });
                 }
+
+                // Sign out from Supabase
+                await supabase.auth.signOut();
 
                 set({
                     user: null,
                     isAuthenticated: false,
-                    sessionId: null
+                    sessionId: null,
                 });
             },
 
@@ -155,35 +120,83 @@ export const useAuthStore = create<AuthState>()(
                 });
             },
 
-            addUser: (user: User, password: string) => {
-                set(state => ({
-                    users: [...state.users, { ...user, password }]
-                }));
-            },
+            checkSession: async () => {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
 
-            updateUser: (id: string, updates: Partial<User>) => {
-                set(state => ({
-                    users: state.users.map(u => u.id === id ? { ...u, ...updates } : u),
-                    // If the updated user is the current logged in user, update that too
-                    user: state.user?.id === id ? { ...state.user, ...updates } : state.user
-                }));
-            },
+                    if (!session) {
+                        set({
+                            user: null,
+                            isAuthenticated: false,
+                            sessionId: null,
+                        });
+                        return;
+                    }
 
-            deleteUser: (id: string) => {
-                set(state => ({
-                    users: state.users.filter(u => u.id !== id)
-                }));
-            },
+                    // Fetch user profile
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
 
-            resetPassword: (id: string, newPassword: string) => {
-                set(state => ({
-                    users: state.users.map(u => u.id === id ? { ...u, password: newPassword } : u)
-                }));
-            }
+                    if (profile) {
+                        const user: User = {
+                            id: profile.id,
+                            username: profile.username || session.user.email || '',
+                            email: session.user.email || '',
+                            firstName: profile.first_name || '',
+                            lastName: profile.last_name || '',
+                            role: profile.role || 'analyst',
+                            department: profile.department || '',
+                            isActive: profile.is_active ?? true,
+                            createdAt: profile.created_at,
+                            permissions: getRolePermissions(profile.role),
+                        };
+
+                        set({
+                            user,
+                            isAuthenticated: true,
+                            sessionId: session.access_token,
+                        });
+                    }
+                } catch (error) {
+                    console.error('Session check error:', error);
+                }
+            },
         }),
         {
             name: 'pharma-qc-auth',
-            partialize: (state) => ({ users: state.users }), // Only persist users list
+            partialize: (state) => ({
+                sessionId: state.sessionId,
+            }),
         }
     )
 );
+
+// Helper function to get permissions based on role
+function getRolePermissions(role: string) {
+    switch (role) {
+        case 'admin':
+            return [{ resource: '*', actions: ['*'] }];
+        case 'qa_manager':
+            return [
+                { resource: 'samples', actions: ['create', 'read', 'update', 'approve'] },
+                { resource: 'products', actions: ['create', 'read', 'update'] },
+                { resource: 'results', actions: ['read', 'approve'] },
+                { resource: 'audit', actions: ['read'] },
+            ];
+        case 'analyst':
+            return [
+                { resource: 'samples', actions: ['read', 'update'] },
+                { resource: 'results', actions: ['create', 'read', 'update'] },
+            ];
+        case 'reviewer':
+            return [
+                { resource: 'samples', actions: ['read'] },
+                { resource: 'results', actions: ['read', 'approve'] },
+            ];
+        default:
+            return [{ resource: 'samples', actions: ['read'] }];
+    }
+}
