@@ -129,6 +129,9 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                 .insert({
                     code: product.code,
                     name: product.name,
+                    generic_name: product.name, // Use name as generic_name if not provided
+                    type: product.dosageForm || product.materialType || 'finished_product', // Required field
+                    category: product.category || product.materialType || null,
                     material_type: product.materialType,
                     dosage_form: product.dosageForm,
                     packaging_type: product.packagingType,
