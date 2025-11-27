@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { useMasterDataStore } from '../stores/masterDataStore';
+import { useSchemaStore } from '../stores/schemaStore';
 import { TestMethod } from '../types';
 import { Save, X } from 'lucide-react';
 
@@ -12,6 +13,8 @@ interface TestMethodModalProps {
 
 export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClose, methodToEdit }) => {
     const { addTestMethod, updateTestMethod } = useMasterDataStore();
+    const { getAllSchemas } = useSchemaStore();
+    const schemas = getAllSchemas();
 
     const [formData, setFormData] = useState({
         code: '',
@@ -22,6 +25,7 @@ export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClos
         procedure: '',
         equipment: '',
         reagents: '',
+        resultSchemaId: ''
     });
 
     useEffect(() => {
@@ -35,6 +39,7 @@ export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClos
                 procedure: methodToEdit.procedure || '',
                 equipment: methodToEdit.equipment?.join(', ') || '',
                 reagents: methodToEdit.reagents?.join(', ') || '',
+                resultSchemaId: methodToEdit.resultSchemaId || ''
             });
         } else {
             setFormData({
@@ -46,6 +51,7 @@ export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClos
                 procedure: '',
                 equipment: '',
                 reagents: '',
+                resultSchemaId: ''
             });
         }
     }, [methodToEdit, isOpen]);
@@ -63,7 +69,7 @@ export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClos
             equipment: formData.equipment.split(',').map(e => e.trim()).filter(Boolean),
             reagents: formData.reagents.split(',').map(r => r.trim()).filter(Boolean),
             status: 'active' as const,
-            resultSchemaId: 'default-schema'
+            resultSchemaId: formData.resultSchemaId
         };
 
         if (methodToEdit) {
@@ -137,6 +143,24 @@ export const TestMethodModal: React.FC<TestMethodModalProps> = ({ isOpen, onClos
                             <option value="">Select Category</option>
                             {categories.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Result Schema */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Result Schema *
+                        </label>
+                        <select
+                            required
+                            value={formData.resultSchemaId}
+                            onChange={(e) => setFormData({ ...formData, resultSchemaId: e.target.value })}
+                            className="input"
+                        >
+                            <option value="">Select Schema</option>
+                            {schemas.map(schema => (
+                                <option key={schema.id} value={schema.id}>{schema.name}</option>
                             ))}
                         </select>
                     </div>
