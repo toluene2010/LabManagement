@@ -54,7 +54,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, pro
                 materialType: productToEdit.materialType || 'finished_product',
                 dosageForm: productToEdit.dosageForm || 'oral_liquid',
                 packagingType: productToEdit.packagingType || 'primary',
-                schemaId: productToEdit.schemaId,
+                schemaId: productToEdit.schemaId || '',
                 description: productToEdit.description || '',
                 selectedMethodIds: productToEdit.specifications.map(s => s.testMethodId),
                 specDetails
