@@ -324,7 +324,7 @@ export const useRDStudyStore = create<RDStudyState>((set, get) => ({
         }
     },
 
-    updateDissolutionProfile: async (studyId, profileId, updates) => {
+    updateDissolutionProfile: async (_studyId, profileId, updates) => {
         try {
             const dbUpdates: any = {};
             if (updates.sampleId) dbUpdates.sample_id = updates.sampleId;
@@ -344,7 +344,7 @@ export const useRDStudyStore = create<RDStudyState>((set, get) => ({
         }
     },
 
-    deleteDissolutionProfile: async (studyId, profileId) => {
+    deleteDissolutionProfile: async (_studyId, profileId) => {
         try {
             const { error } = await supabase
                 .from('rd_dissolution_profiles')

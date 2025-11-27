@@ -277,7 +277,7 @@ export const useStabilityStore = create<StabilityState>((set, get) => ({
         }
     },
 
-    updateTimePoint: async (studyId, timePointId, updates) => {
+    updateTimePoint: async (_studyId, timePointId, updates) => {
         try {
             const dbUpdates: any = {};
             if (updates.status) dbUpdates.status = updates.status;
@@ -297,7 +297,7 @@ export const useStabilityStore = create<StabilityState>((set, get) => ({
         }
     },
 
-    completeTimePoint: async (studyId, timePointId) => {
+    completeTimePoint: async (_studyId, timePointId) => {
         try {
             const { error } = await supabase
                 .from('stability_time_points')
@@ -315,7 +315,7 @@ export const useStabilityStore = create<StabilityState>((set, get) => ({
         }
     },
 
-    addTestResult: async (studyId, timePointId, result) => {
+    addTestResult: async (_studyId, timePointId, result) => {
         try {
             const { data, error } = await supabase
                 .from('stability_test_results')
@@ -344,7 +344,7 @@ export const useStabilityStore = create<StabilityState>((set, get) => ({
         }
     },
 
-    updateTestResult: async (studyId, timePointId, resultId, updates) => {
+    updateTestResult: async (_studyId, _timePointId, resultId, updates) => {
         try {
             const dbUpdates: any = {};
             if (updates.result !== undefined) dbUpdates.result_value = String(updates.result);

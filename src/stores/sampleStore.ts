@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { Sample, TestResult, SampleStatus } from '../types';
+import { Sample, SampleStatus } from '../types';
 
 interface SampleState {
     samples: Sample[];
@@ -57,10 +57,10 @@ export const useSampleStore = create<SampleState>((set, get) => ({
                         outOfSpec: false, // Logic to determine this could be added
                         enteredBy: r.tested_by,
                         enteredAt: r.tested_at,
-                        reviewedBy: null, // Need to add these columns to DB if needed
-                        reviewedAt: null,
-                        approvedBy: null,
-                        approvedAt: null,
+                        reviewedBy: undefined, // Need to add these columns to DB if needed
+                        reviewedAt: undefined,
+                        approvedBy: undefined,
+                        approvedAt: undefined,
                         comments: r.remarks
                     }));
 
@@ -234,7 +234,7 @@ export const useSampleStore = create<SampleState>((set, get) => ({
         }
     },
 
-    reviewResult: async (sampleId, testMethodId, userId, comments) => {
+    reviewResult: async (sampleId, testMethodId, _userId, comments) => {
         try {
             const { data: resultRow, error: findError } = await supabase
                 .from('test_results')
@@ -262,7 +262,7 @@ export const useSampleStore = create<SampleState>((set, get) => ({
         }
     },
 
-    approveResult: async (sampleId, testMethodId, userId) => {
+    approveResult: async (sampleId, testMethodId, _userId) => {
         try {
             const { data: resultRow, error: findError } = await supabase
                 .from('test_results')
