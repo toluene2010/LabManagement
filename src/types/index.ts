@@ -59,6 +59,7 @@ export interface Product {
     id: string;
     code: string;
     name: string;
+    category?: string; // Optional category
     materialType: MaterialType; // NEW: Raw Material, Intermediate, or Finished Product
     dosageForm?: DosageForm; // Optional for raw materials
     packagingType?: PackagingType; // NEW: For packaging materials

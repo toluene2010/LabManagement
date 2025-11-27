@@ -58,6 +58,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                 id: p.id,
                 code: p.code,
                 name: p.name,
+                category: p.category,
                 materialType: p.material_type || 'finished_product',
                 dosageForm: p.dosage_form,
                 packagingType: p.packaging_type,
@@ -123,6 +124,17 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                 ? product.schemaId
                 : null;
 
+            // Determine the type field value
+            // Priority: dosageForm > materialType > default
+            let typeValue: string;
+            if (product.dosageForm) {
+                typeValue = product.dosageForm;
+            } else if (product.materialType) {
+                typeValue = product.materialType;
+            } else {
+                typeValue = 'finished_product';
+            }
+
             // Insert Product
             const { data, error } = await supabase
                 .from('products')
@@ -130,7 +142,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                     code: product.code,
                     name: product.name,
                     generic_name: product.name, // Use name as generic_name if not provided
-                    type: product.dosageForm || product.materialType || 'finished_product', // Required field
+                    type: typeValue, // Required field - always has a value
                     category: product.category || product.materialType || null,
                     material_type: product.materialType,
                     dosage_form: product.dosageForm,
@@ -189,6 +201,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
             const updateData: any = {};
             if (updates.code) updateData.code = updates.code;
             if (updates.name) updateData.name = updates.name;
+            if (updates.category !== undefined) updateData.category = updates.category;
             if (updates.materialType) updateData.material_type = updates.materialType;
             if (updates.dosageForm) updateData.dosage_form = updates.dosageForm;
             if (updates.packagingType) updateData.packaging_type = updates.packagingType;
