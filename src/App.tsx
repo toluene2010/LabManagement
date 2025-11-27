@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -20,7 +21,12 @@ import { useAuthStore } from './stores/authStore';
 import { ToastProvider } from './components/ToastProvider';
 
 function App() {
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, checkSession } = useAuthStore();
+
+    // Check for existing session on mount
+    useEffect(() => {
+        checkSession();
+    }, [checkSession]);
 
     return (
         <ToastProvider>
