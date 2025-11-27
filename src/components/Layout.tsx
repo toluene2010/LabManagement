@@ -17,15 +17,18 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useMasterDataStore } from '../stores/masterDataStore';
+import { useSampleStore } from '../stores/sampleStore';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     const { user, logout } = useAuthStore();
     const { fetchMasterData } = useMasterDataStore();
+    const { fetchSamples } = useSampleStore();
 
     React.useEffect(() => {
         fetchMasterData();
-    }, [fetchMasterData]);
+        fetchSamples();
+    }, [fetchMasterData, fetchSamples]);
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
