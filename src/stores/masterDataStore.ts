@@ -117,6 +117,12 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
+            // Validate schema_id is a UUID or set to null
+            const schemaId = product.schemaId &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.schemaId)
+                ? product.schemaId
+                : null;
+
             // Insert Product
             const { data, error } = await supabase
                 .from('products')
@@ -126,7 +132,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                     material_type: product.materialType,
                     dosage_form: product.dosageForm,
                     packaging_type: product.packagingType,
-                    schema_id: product.schemaId,
+                    schema_id: schemaId,
                     status: product.status,
                     version: product.version,
                     custom_fields: product.customFields,
@@ -258,6 +264,12 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
+            // Validate result_schema_id is a UUID or set to null
+            const resultSchemaId = method.resultSchemaId &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(method.resultSchemaId)
+                ? method.resultSchemaId
+                : null;
+
             const { data, error } = await supabase
                 .from('test_methods')
                 .insert({
@@ -265,7 +277,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                     name: method.name,
                     description: method.description,
                     category: method.category,
-                    result_schema_id: method.resultSchemaId,
+                    result_schema_id: resultSchemaId,
                     acceptance_criteria: method.acceptanceCriteria,
                     procedure: method.procedure,
                     equipment: method.equipment,
