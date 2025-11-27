@@ -205,7 +205,11 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
             if (updates.materialType) updateData.material_type = updates.materialType;
             if (updates.dosageForm) updateData.dosage_form = updates.dosageForm;
             if (updates.packagingType) updateData.packaging_type = updates.packagingType;
-            if (updates.schemaId) updateData.schema_id = updates.schemaId;
+            if (updates.schemaId) {
+                updateData.schema_id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updates.schemaId)
+                    ? updates.schemaId
+                    : null;
+            }
             if (updates.status) updateData.status = updates.status;
             if (updates.version) updateData.version = updates.version;
             if (updates.customFields) updateData.custom_fields = updates.customFields;
@@ -323,7 +327,11 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
             if (updates.name) updateData.name = updates.name;
             if (updates.description !== undefined) updateData.description = updates.description;
             if (updates.category) updateData.category = updates.category;
-            if (updates.resultSchemaId) updateData.result_schema_id = updates.resultSchemaId;
+            if (updates.resultSchemaId) {
+                updateData.result_schema_id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updates.resultSchemaId)
+                    ? updates.resultSchemaId
+                    : null;
+            }
             if (updates.acceptanceCriteria) updateData.acceptance_criteria = updates.acceptanceCriteria;
             if (updates.procedure) updateData.procedure = updates.procedure;
             if (updates.equipment) updateData.equipment = updates.equipment;
