@@ -16,10 +16,16 @@ import {
     Beaker
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import { useMasterDataStore } from '../stores/masterDataStore';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     const { user, logout } = useAuthStore();
+    const { fetchMasterData } = useMasterDataStore();
+
+    React.useEffect(() => {
+        fetchMasterData();
+    }, [fetchMasterData]);
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
