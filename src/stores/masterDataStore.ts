@@ -391,7 +391,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                     name: oldMethod.name,
                     description: oldMethod.description,
                     category: oldMethod.category,
-                    result_schema_id: oldMethod.resultSchemaId,
+                    result_schema_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(oldMethod.resultSchemaId) ? oldMethod.resultSchemaId : null,
                     acceptance_criteria: oldMethod.acceptanceCriteria,
                     procedure: oldMethod.procedure,
                     equipment: oldMethod.equipment,
