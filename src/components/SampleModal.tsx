@@ -13,7 +13,7 @@ interface SampleModalProps {
 export const SampleModal: React.FC<SampleModalProps> = ({ isOpen, onClose }) => {
     const { registerSample } = useSampleStore();
     const { products } = useMasterDataStore();
-    const { user, users } = useAuthStore();
+    const { user } = useAuthStore();
 
     const [formData, setFormData] = useState({
         productId: '',
@@ -209,8 +209,8 @@ export const SampleModal: React.FC<SampleModalProps> = ({ isOpen, onClose }) => 
                         />
                     </div>
 
-                    {/* Assigned Analyst */}
-                    <div className="col-span-2">
+                    {/* Assigned Analyst - Temporarily Disabled */}
+                    {/* <div className="col-span-2">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Assign Analyst (Optional)
                         </label>
@@ -226,7 +226,7 @@ export const SampleModal: React.FC<SampleModalProps> = ({ isOpen, onClose }) => 
                                 </option>
                             ))}
                         </select>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Actions */}

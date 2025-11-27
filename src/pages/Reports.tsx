@@ -15,7 +15,7 @@ import { useCompanyConfig } from '../stores/companyConfigStore';
 export const Reports: React.FC = () => {
     const { samples } = useSampleStore();
     const { products } = useMasterDataStore();
-    const { users, user } = useAuthStore();
+    const { user } = useAuthStore();
     const { deviations, capas } = useDeviationStore();
     const { studies } = useStabilityStore();
 
@@ -109,7 +109,7 @@ export const Reports: React.FC = () => {
         // Table Data
         const tableData = filteredSamples.map(sample => {
             const product = products.find(p => p.id === sample.productId);
-            const analyst = users.find(u => u.id === sample.assignedTo);
+            const analystName = sample.assignedTo ? 'Assigned' : 'Unassigned';
             const completedTests = sample.results.filter(r => r.status === 'approved').length;
             const totalTests = sample.results.length;
 
@@ -119,7 +119,7 @@ export const Reports: React.FC = () => {
                 sample.batchNumber,
                 new Date(sample.receivedDate).toLocaleDateString(),
                 sample.status,
-                analyst ? `${analyst.firstName} ${analyst.lastName}` : 'Unassigned',
+                analystName,
                 `${completedTests}/${totalTests}`
             ];
         });
@@ -188,8 +188,10 @@ export const Reports: React.FC = () => {
         doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 55);
 
         // Calculate performance metrics per analyst
-        const analysts = users.filter(u => u.role === 'analyst');
-        const performanceData = analysts.map(analyst => {
+        // Note: Analyst performance requires user management integration
+        const performanceData: any[] = []; // Temporarily disabled until user management is connected
+        /*
+        const performanceData = analysts.map((analyst: any) => {
             const assignedSamples = samples.filter(s => s.assignedTo === analyst.id);
             const completedSamples = assignedSamples.filter(s => s.status === 'approved');
             const avgTurnaround = assignedSamples.length > 0
@@ -208,6 +210,7 @@ export const Reports: React.FC = () => {
                 avgTurnaround.toFixed(1) + ' days'
             ];
         });
+        */
 
         autoTable(doc, {
             head: [['Analyst', 'Assigned', 'Completed', 'Completion %', 'Avg. Turnaround']],

@@ -65,7 +65,7 @@ export const DeviationModal: React.FC<DeviationModalProps> = ({ isOpen, onClose,
             addDeviation({
                 ...formData,
                 status: 'open',
-                reportedBy: user?.username || 'Unknown',
+                reportedBy: user?.id || 'unknown',
                 investigation: ''
             });
         }

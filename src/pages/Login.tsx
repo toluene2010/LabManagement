@@ -52,18 +52,18 @@ export const Login: React.FC = () => {
                 <div className="card backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 animate-fade-in">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="label" htmlFor="username">Username</label>
+                            <label className="label" htmlFor="username">Email</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <User className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
                                     id="username"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="input pl-10"
-                                    placeholder="Enter your username"
+                                    placeholder="Enter your email"
                                     required
                                 />
                             </div>

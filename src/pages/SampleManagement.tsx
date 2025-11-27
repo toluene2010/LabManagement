@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSampleStore } from '../stores/sampleStore';
 import { useMasterDataStore } from '../stores/masterDataStore';
-import { useAuthStore } from '../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, Microscope, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { SampleModal } from '../components/SampleModal';
@@ -9,7 +8,6 @@ import { SampleModal } from '../components/SampleModal';
 export const SampleManagement: React.FC = () => {
     const { samples } = useSampleStore();
     const { products } = useMasterDataStore();
-    const { users } = useAuthStore();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,14 +98,6 @@ export const SampleManagement: React.FC = () => {
                                             <span>Batch: {sample.batchNumber}</span>
                                             <span>•</span>
                                             <span>Received: {new Date(sample.receivedDate).toLocaleDateString()}</span>
-                                            {sample.assignedTo && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span className="text-primary-600 font-medium">
-                                                        Analyst: {users.find(u => u.id === sample.assignedTo)?.firstName} {users.find(u => u.id === sample.assignedTo)?.lastName}
-                                                    </span>
-                                                </>
-                                            )}
                                         </div>
                                     </div>
                                 </div>

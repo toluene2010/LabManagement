@@ -65,7 +65,7 @@ export const CAPAModal: React.FC<CAPAModalProps> = ({ isOpen, onClose, capaId, i
                 ...formData,
                 targetDate: new Date(formData.targetDate).toISOString(),
                 status: 'open',
-                createdBy: user?.username || 'Unknown'
+                createdBy: user?.id || 'unknown'
             });
         }
         onClose();

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useCompanyConfig } from '../stores/companyConfigStore';
-import { useAuthStore } from '../stores/authStore';
-import { Building2, Users, Shield, Save, Plus, Trash2, Key, FileText, Upload } from 'lucide-react';
+// import { useAuthStore } from '../stores/authStore';
+import { Building2, Users, Shield, Save, Plus, Trash2, Upload } from 'lucide-react';
+// import { Key, FileText } from 'lucide-react';
 import { User, UserRole } from '../types';
 
 export const AdminSettings: React.FC = () => {
     const { config, updateConfig } = useCompanyConfig();
-    const { users, addUser, updateUser, deleteUser, resetPassword } = useAuthStore();
+    // const { users, addUser, updateUser, deleteUser, resetPassword } = useAuthStore();
     const [activeTab, setActiveTab] = useState<'company' | 'users' | 'audit'>('company');
 
     // Company Form State
@@ -81,28 +82,14 @@ export const AdminSettings: React.FC = () => {
 
     const handleUserSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingUser) {
-            updateUser(editingUser.id, userFormData);
-        } else {
-            const newUser: User = {
-                id: `user_${Date.now()}`,
-                username: userFormData.username!,
-                email: userFormData.email!,
-                firstName: userFormData.firstName!,
-                lastName: userFormData.lastName!,
-                role: userFormData.role as UserRole,
-                department: userFormData.department,
-                isActive: userFormData.isActive!,
-                createdAt: new Date().toISOString(),
-                permissions: [] // Default permissions based on role could be added here
-            };
-            addUser(newUser, userFormData.password || 'password123');
-        }
+        // User management temporarily disabled for Supabase integration
+        alert('User management is currently disabled in this version.');
         setShowUserModal(false);
         setEditingUser(null);
         setUserFormData({ role: 'analyst', isActive: true, permissions: [] });
     };
 
+    /*
     const openUserModal = (user?: User) => {
         if (user) {
             setEditingUser(user);
@@ -113,6 +100,7 @@ export const AdminSettings: React.FC = () => {
         }
         setShowUserModal(true);
     };
+    */
 
     return (
         <div className="h-[calc(100vh-6rem)] flex flex-col gap-6">
@@ -353,74 +341,19 @@ export const AdminSettings: React.FC = () => {
                     {activeTab === 'users' && (
                         <div className="space-y-6">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold">Users ({users.length})</h3>
-                                <button onClick={() => openUserModal()} className="btn btn-primary flex items-center gap-2">
+                                <h3 className="text-lg font-semibold">Users</h3>
+                                <button onClick={() => alert('User management is disabled')} className="btn btn-primary flex items-center gap-2 opacity-50 cursor-not-allowed">
                                     <Plus className="w-4 h-4" />
                                     Add User
                                 </button>
                             </div>
 
-                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 font-medium border-b border-slate-200 dark:border-slate-700">
-                                        <tr>
-                                            <th className="px-6 py-4">Name</th>
-                                            <th className="px-6 py-4">Role</th>
-                                            <th className="px-6 py-4">Department</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                        {users.map(user => (
-                                            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                <td className="px-6 py-4">
-                                                    <div className="font-medium text-slate-900 dark:text-white">{user.firstName} {user.lastName}</div>
-                                                    <div className="text-xs text-slate-500">{user.email}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="badge badge-info uppercase">{user.role.replace('_', ' ')}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-600">{user.department || '-'}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`badge ${user.isActive ? 'badge-success' : 'badge-danger'}`}>
-                                                        {user.isActive ? 'Active' : 'Inactive'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button onClick={() => openUserModal(user)} className="p-2 text-slate-400 hover:text-primary-600 transition-colors">
-                                                            <FileText className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const newPass = prompt('Enter new password for ' + user.username);
-                                                                if (newPass) {
-                                                                    resetPassword(user.id, newPass);
-                                                                    alert('Password updated');
-                                                                }
-                                                            }}
-                                                            className="p-2 text-slate-400 hover:text-warning-600 transition-colors"
-                                                            title="Reset Password"
-                                                        >
-                                                            <Key className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                if (confirm('Are you sure you want to delete this user?')) {
-                                                                    deleteUser(user.id);
-                                                                }
-                                                            }}
-                                                            className="p-2 text-slate-400 hover:text-danger-600 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
+                                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">User Management Disabled</h3>
+                                <p className="text-slate-500 max-w-md mx-auto">
+                                    User management is currently handled directly through the Supabase Dashboard. This feature will be enabled in a future update.
+                                </p>
                             </div>
                         </div>
                     )}

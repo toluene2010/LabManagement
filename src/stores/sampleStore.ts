@@ -1,225 +1,291 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
 import { Sample, TestResult, SampleStatus } from '../types';
 
 interface SampleState {
     samples: Sample[];
+    isLoading: boolean;
+    error: string | null;
 
     // Sample Actions
-    registerSample: (sample: Omit<Sample, 'id' | 'createdAt' | 'updatedAt' | 'results' | 'status'>) => string;
-    updateSampleStatus: (id: string, status: SampleStatus) => void;
-    updateSample: (id: string, updates: Partial<Sample>) => void;
+    fetchSamples: () => Promise<void>;
+    registerSample: (sample: Omit<Sample, 'id' | 'createdAt' | 'updatedAt' | 'results' | 'status'>) => Promise<string | null>;
+    updateSampleStatus: (id: string, status: SampleStatus) => Promise<void>;
+    updateSample: (id: string, updates: Partial<Sample>) => Promise<void>;
     getSample: (id: string) => Sample | undefined;
 
     // Result Actions
-    saveResult: (sampleId: string, testMethodId: string, resultData: any, userId: string) => void;
-    submitResult: (sampleId: string, testMethodId: string, userId: string) => void;
-    reviewResult: (sampleId: string, testMethodId: string, userId: string, comments?: string) => void;
-    approveResult: (sampleId: string, testMethodId: string, userId: string) => void;
+    saveResult: (sampleId: string, testMethodId: string, resultData: any, userId: string) => Promise<void>;
+    submitResult: (sampleId: string, testMethodId: string, userId: string) => Promise<void>;
+    reviewResult: (sampleId: string, testMethodId: string, userId: string, comments?: string) => Promise<void>;
+    approveResult: (sampleId: string, testMethodId: string, userId: string) => Promise<void>;
 }
 
-const INITIAL_SAMPLES: Sample[] = [
-    {
-        id: 's_001',
-        sampleNumber: 'S-2024-001',
-        productId: 'prod_para_500',
-        batchNumber: 'B12345',
-        lotNumber: 'L001',
-        manufacturingDate: '2024-01-15',
-        expiryDate: '2026-01-14',
-        receivedDate: new Date().toISOString(),
-        receivedBy: 'admin',
-        quantity: 100,
-        unit: 'Tablets',
-        status: 'in_analysis',
-        priority: 'medium',
-        testMethodIds: ['tm_assay_hplc', 'tm_dissolution'],
-        customFields: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        results: [
-            {
-                id: 'res_001',
-                sampleId: 's_001',
-                testMethodId: 'tm_assay_hplc',
-                status: 'completed',
-                results: {
-                    result: 99.5,
-                    average: 99.5,
-                    rsd: 0.5
-                },
-                enteredBy: 'analyst',
-                enteredAt: new Date().toISOString(),
-                outOfSpec: false
-            },
-            {
-                id: 'res_002',
-                sampleId: 's_001',
-                testMethodId: 'tm_dissolution',
-                status: 'pending',
-                results: {},
-                outOfSpec: false
-            }
-        ]
-    }
-];
+export const useSampleStore = create<SampleState>((set, get) => ({
+    samples: [],
+    isLoading: false,
+    error: null,
 
-export const useSampleStore = create<SampleState>()(
-    persist(
-        (set, get) => ({
-            samples: INITIAL_SAMPLES,
+    fetchSamples: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            // Fetch samples
+            const { data: samplesData, error: samplesError } = await supabase
+                .from('samples')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            registerSample: (sampleData) => {
-                const id = `s_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                const sampleNumber = `S-${new Date().getFullYear()}-${String(get().samples.length + 1).padStart(3, '0')}`;
+            if (samplesError) throw samplesError;
 
-                // Initialize empty results for all assigned test methods
-                const initialResults: TestResult[] = sampleData.testMethodIds.map(tmId => ({
-                    id: `res_${Date.now()}_${tmId}`,
-                    sampleId: id,
-                    testMethodId: tmId,
-                    status: 'pending',
-                    results: {},
-                    outOfSpec: false
-                }));
+            // Fetch results for these samples
+            const { data: resultsData, error: resultsError } = await supabase
+                .from('test_results')
+                .select('*');
 
-                const newSample: Sample = {
-                    ...sampleData,
-                    id,
-                    sampleNumber,
-                    status: 'received',
-                    results: initialResults,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+            if (resultsError) throw resultsError;
+
+            // Map to application type
+            const mappedSamples: Sample[] = samplesData.map((s: any) => {
+                const sampleResults = resultsData
+                    .filter((r: any) => r.sample_id === s.id)
+                    .map((r: any) => ({
+                        id: r.id,
+                        sampleId: r.sample_id,
+                        testMethodId: r.test_method_id,
+                        status: r.status,
+                        results: r.result_value ? JSON.parse(r.result_value) : {},
+                        outOfSpec: false, // Logic to determine this could be added
+                        enteredBy: r.tested_by,
+                        enteredAt: r.tested_at,
+                        reviewedBy: null, // Need to add these columns to DB if needed
+                        reviewedAt: null,
+                        approvedBy: null,
+                        approvedAt: null,
+                        comments: r.remarks
+                    }));
+
+                return {
+                    id: s.id,
+                    sampleNumber: s.sample_id,
+                    productId: s.product_id,
+                    batchNumber: s.batch_number,
+                    lotNumber: '', // Missing in DB schema, add if needed
+                    manufacturingDate: s.manufacturing_date,
+                    expiryDate: s.expiry_date,
+                    receivedDate: s.received_date,
+                    receivedBy: '', // Need to fetch profile name or store ID
+                    quantity: 0, // Missing in DB
+                    unit: 'g', // Missing in DB
+                    status: s.status as SampleStatus,
+                    priority: s.priority,
+                    testMethodIds: sampleResults.map((r: any) => r.testMethodId),
+                    customFields: {},
+                    createdAt: s.created_at,
+                    updatedAt: s.created_at, // Use created_at as fallback
+                    results: sampleResults,
+                    dueDate: '', // Missing in DB
+                    assignedTo: s.analyst_id
                 };
+            });
 
-                set((state) => ({
-                    samples: [newSample, ...state.samples]
-                }));
-
-                return id;
-            },
-
-            updateSampleStatus: (id, status) => {
-                set((state) => ({
-                    samples: state.samples.map((s) =>
-                        s.id === id
-                            ? { ...s, status, updatedAt: new Date().toISOString() }
-                            : s
-                    )
-                }));
-            },
-
-            updateSample: (id, updates) => {
-                set((state) => ({
-                    samples: state.samples.map((s) =>
-                        s.id === id
-                            ? { ...s, ...updates, updatedAt: new Date().toISOString() }
-                            : s
-                    )
-                }));
-            },
-
-            getSample: (id) => {
-                return get().samples.find((s) => s.id === id);
-            },
-
-            saveResult: (sampleId, testMethodId, resultData, userId) => {
-                set((state) => ({
-                    samples: state.samples.map((s) => {
-                        if (s.id !== sampleId) return s;
-
-                        const updatedResults = s.results.map((r) => {
-                            if (r.testMethodId !== testMethodId) return r;
-
-                            return {
-                                ...r,
-                                results: resultData,
-                                status: 'in_progress' as const,
-                                enteredBy: userId,
-                                enteredAt: new Date().toISOString()
-                            };
-                        });
-
-                        return { ...s, results: updatedResults, updatedAt: new Date().toISOString() };
-                    })
-                }));
-            },
-
-            submitResult: (sampleId, testMethodId, userId) => {
-                set((state) => ({
-                    samples: state.samples.map((s) => {
-                        if (s.id !== sampleId) return s;
-
-                        const updatedResults = s.results.map((r) => {
-                            if (r.testMethodId !== testMethodId) return r;
-
-                            return {
-                                ...r,
-                                status: 'completed' as const,
-                                enteredBy: userId,
-                                enteredAt: new Date().toISOString()
-                            };
-                        });
-
-                        // Check if all results are completed to update sample status
-                        const allCompleted = updatedResults.every(r => r.status === 'completed' || r.status === 'reviewed' || r.status === 'approved');
-                        const newStatus = allCompleted ? 'under_review' : 'in_analysis';
-
-                        return { ...s, results: updatedResults, status: newStatus, updatedAt: new Date().toISOString() };
-                    })
-                }));
-            },
-
-            reviewResult: (sampleId, testMethodId, userId, comments) => {
-                set((state) => ({
-                    samples: state.samples.map((s) => {
-                        if (s.id !== sampleId) return s;
-
-                        const updatedResults = s.results.map((r) => {
-                            if (r.testMethodId !== testMethodId) return r;
-
-                            return {
-                                ...r,
-                                status: 'reviewed' as const,
-                                reviewedBy: userId,
-                                reviewedAt: new Date().toISOString(),
-                                comments
-                            };
-                        });
-
-                        return { ...s, results: updatedResults, updatedAt: new Date().toISOString() };
-                    })
-                }));
-            },
-
-            approveResult: (sampleId, testMethodId, userId) => {
-                set((state) => ({
-                    samples: state.samples.map((s) => {
-                        if (s.id !== sampleId) return s;
-
-                        const updatedResults = s.results.map((r) => {
-                            if (r.testMethodId !== testMethodId) return r;
-
-                            return {
-                                ...r,
-                                status: 'approved' as const,
-                                approvedBy: userId,
-                                approvedAt: new Date().toISOString()
-                            };
-                        });
-
-                        // Check if all results are approved to update sample status
-                        const allApproved = updatedResults.every(r => r.status === 'approved');
-                        const newStatus = allApproved ? 'approved' : 'under_review';
-
-                        return { ...s, results: updatedResults, status: newStatus, updatedAt: new Date().toISOString() };
-                    })
-                }));
-            }
-        }),
-        {
-            name: 'pharma-qc-samples'
+            set({ samples: mappedSamples });
+        } catch (error: any) {
+            console.error('Error fetching samples:', error);
+            set({ error: error.message });
+        } finally {
+            set({ isLoading: false });
         }
-    )
-);
+    },
+
+    registerSample: async (sampleData) => {
+        set({ isLoading: true, error: null });
+        try {
+            // 1. Insert Sample
+            const { data: newSampleData, error: sampleError } = await supabase
+                .from('samples')
+                .insert({
+                    sample_id: `S-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`, // Simple ID generation
+                    product_id: sampleData.productId,
+                    batch_number: sampleData.batchNumber,
+                    manufacturing_date: sampleData.manufacturingDate || null,
+                    expiry_date: sampleData.expiryDate || null,
+                    received_date: sampleData.receivedDate,
+                    status: 'received',
+                    priority: sampleData.priority,
+                    analyst_id: sampleData.assignedTo || null
+                    // Add other fields if schema supports them
+                })
+                .select()
+                .single();
+
+            if (sampleError) throw sampleError;
+
+            // 2. Insert Initial Test Results
+            if (sampleData.testMethodIds.length > 0) {
+                const resultsToInsert = sampleData.testMethodIds.map(tmId => ({
+                    sample_id: newSampleData.id,
+                    test_method_id: tmId,
+                    status: 'pending',
+                    result_value: '{}'
+                }));
+
+                const { error: resultsError } = await supabase
+                    .from('test_results')
+                    .insert(resultsToInsert);
+
+                if (resultsError) throw resultsError;
+            }
+
+            // Refresh samples
+            await get().fetchSamples();
+            return newSampleData.id;
+
+        } catch (error: any) {
+            console.error('Error registering sample:', error);
+            set({ error: error.message });
+            return null;
+        } finally {
+            set({ isLoading: false });
+        }
+    },
+
+    updateSampleStatus: async (id, status) => {
+        try {
+            const { error } = await supabase
+                .from('samples')
+                .update({ status })
+                .eq('id', id);
+
+            if (error) throw error;
+            await get().fetchSamples();
+        } catch (error: any) {
+            console.error('Error updating sample status:', error);
+            set({ error: error.message });
+        }
+    },
+
+    updateSample: async (id, updates) => {
+        // Implementation for general updates if needed
+        console.log('Update sample not fully implemented yet', id, updates);
+    },
+
+    getSample: (id) => {
+        return get().samples.find((s) => s.id === id);
+    },
+
+    saveResult: async (sampleId, testMethodId, resultData, userId) => {
+        try {
+            // Find the result ID (assuming one result per test method per sample for now)
+            const { data: resultRow, error: findError } = await supabase
+                .from('test_results')
+                .select('id')
+                .eq('sample_id', sampleId)
+                .eq('test_method_id', testMethodId)
+                .single();
+
+            if (findError) throw findError;
+
+            const { error } = await supabase
+                .from('test_results')
+                .update({
+                    result_value: JSON.stringify(resultData),
+                    status: 'in_progress',
+                    tested_by: userId,
+                    tested_at: new Date().toISOString()
+                })
+                .eq('id', resultRow.id);
+
+            if (error) throw error;
+            await get().fetchSamples();
+        } catch (error: any) {
+            console.error('Error saving result:', error);
+            set({ error: error.message });
+        }
+    },
+
+    submitResult: async (sampleId, testMethodId, userId) => {
+        try {
+            const { data: resultRow, error: findError } = await supabase
+                .from('test_results')
+                .select('id')
+                .eq('sample_id', sampleId)
+                .eq('test_method_id', testMethodId)
+                .single();
+
+            if (findError) throw findError;
+
+            const { error } = await supabase
+                .from('test_results')
+                .update({
+                    status: 'completed',
+                    tested_by: userId, // Ensure this is set on submit
+                    tested_at: new Date().toISOString()
+                })
+                .eq('id', resultRow.id);
+
+            if (error) throw error;
+
+            // Check if all results are completed to update sample status?
+            // For now, just refresh
+            await get().fetchSamples();
+        } catch (error: any) {
+            console.error('Error submitting result:', error);
+            set({ error: error.message });
+        }
+    },
+
+    reviewResult: async (sampleId, testMethodId, userId, comments) => {
+        try {
+            const { data: resultRow, error: findError } = await supabase
+                .from('test_results')
+                .select('id')
+                .eq('sample_id', sampleId)
+                .eq('test_method_id', testMethodId)
+                .single();
+
+            if (findError) throw findError;
+
+            const { error } = await supabase
+                .from('test_results')
+                .update({
+                    status: 'reviewed',
+                    remarks: comments
+                    // Add reviewed_by and reviewed_at columns to DB if needed
+                })
+                .eq('id', resultRow.id);
+
+            if (error) throw error;
+            await get().fetchSamples();
+        } catch (error: any) {
+            console.error('Error reviewing result:', error);
+            set({ error: error.message });
+        }
+    },
+
+    approveResult: async (sampleId, testMethodId, userId) => {
+        try {
+            const { data: resultRow, error: findError } = await supabase
+                .from('test_results')
+                .select('id')
+                .eq('sample_id', sampleId)
+                .eq('test_method_id', testMethodId)
+                .single();
+
+            if (findError) throw findError;
+
+            const { error } = await supabase
+                .from('test_results')
+                .update({
+                    status: 'approved'
+                    // Add approved_by and approved_at columns to DB if needed
+                })
+                .eq('id', resultRow.id);
+
+            if (error) throw error;
+            await get().fetchSamples();
+        } catch (error: any) {
+            console.error('Error approving result:', error);
+            set({ error: error.message });
+        }
+    }
+}));
