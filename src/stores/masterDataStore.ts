@@ -118,11 +118,8 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // Validate schema_id is a UUID or set to null
-            const schemaId = product.schemaId &&
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.schemaId)
-                ? product.schemaId
-                : null;
+            // Allow any string ID since we now support text-based IDs
+            const schemaId = product.schemaId || null;
 
             // Determine the type field value
             // Priority: dosageForm > materialType > default
@@ -206,9 +203,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
             if (updates.dosageForm) updateData.dosage_form = updates.dosageForm;
             if (updates.packagingType) updateData.packaging_type = updates.packagingType;
             if (updates.schemaId) {
-                updateData.schema_id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updates.schemaId)
-                    ? updates.schemaId
-                    : null;
+                updateData.schema_id = updates.schemaId;
             }
             if (updates.status) updateData.status = updates.status;
             if (updates.version) updateData.version = updates.version;
@@ -284,11 +279,8 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // Validate result_schema_id is a UUID or set to null
-            const resultSchemaId = method.resultSchemaId &&
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(method.resultSchemaId)
-                ? method.resultSchemaId
-                : null;
+            // Allow any string ID since we now support text-based IDs
+            const resultSchemaId = method.resultSchemaId || null;
 
             const { data, error } = await supabase
                 .from('test_methods')
@@ -328,9 +320,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
             if (updates.description !== undefined) updateData.description = updates.description;
             if (updates.category) updateData.category = updates.category;
             if (updates.resultSchemaId) {
-                updateData.result_schema_id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updates.resultSchemaId)
-                    ? updates.resultSchemaId
-                    : null;
+                updateData.result_schema_id = updates.resultSchemaId;
             }
             if (updates.acceptanceCriteria) updateData.acceptance_criteria = updates.acceptanceCriteria;
             if (updates.procedure) updateData.procedure = updates.procedure;
@@ -391,7 +381,7 @@ export const useMasterDataStore = create<MasterDataState>((set, get) => ({
                     name: oldMethod.name,
                     description: oldMethod.description,
                     category: oldMethod.category,
-                    result_schema_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(oldMethod.resultSchemaId) ? oldMethod.resultSchemaId : null,
+                    result_schema_id: oldMethod.resultSchemaId || null,
                     acceptance_criteria: oldMethod.acceptanceCriteria,
                     procedure: oldMethod.procedure,
                     equipment: oldMethod.equipment,
