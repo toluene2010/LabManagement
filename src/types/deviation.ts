@@ -76,6 +76,7 @@ export interface CAPA {
 
     // Related deviation
     deviationId?: string;
+    plannedDeviationId?: string;
 
     // Action plan
     actionPlan: string;

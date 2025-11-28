@@ -9,7 +9,7 @@ console.log('\n==============================================');
 console.log('  PLANNED DEVIATIONS MIGRATION INSTRUCTIONS');
 console.log('==============================================\n');
 
-const MIGRATION_FILE = 'supabase_add_planned_deviations.sql';
+const MIGRATION_FILE = 'supabase_link_capa_planned_deviation.sql';
 const sqlFile = join(__dirname, MIGRATION_FILE);
 
 if (!existsSync(sqlFile)) {
