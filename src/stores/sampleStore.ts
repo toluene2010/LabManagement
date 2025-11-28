@@ -12,6 +12,7 @@ interface SampleState {
     registerSample: (sample: Omit<Sample, 'id' | 'createdAt' | 'updatedAt' | 'results' | 'status'>) => Promise<string | null>;
     updateSampleStatus: (id: string, status: SampleStatus) => Promise<void>;
     updateSample: (id: string, updates: Partial<Sample>) => Promise<void>;
+    deleteSample: (id: string) => Promise<void>;
     getSample: (id: string) => Sample | undefined;
 
     // Result Actions
@@ -171,6 +172,28 @@ export const useSampleStore = create<SampleState>((set, get) => ({
 
     getSample: (id) => {
         return get().samples.find((s) => s.id === id);
+    },
+
+    deleteSample: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+            // Delete sample (test_results will be cascade deleted due to ON DELETE CASCADE)
+            const { error } = await supabase
+                .from('samples')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            // Update local state
+            set((state) => ({
+                samples: state.samples.filter((s) => s.id !== id),
+                isLoading: false
+            }));
+        } catch (error: any) {
+            console.error('Error deleting sample:', error);
+            set({ error: error.message, isLoading: false });
+        }
     },
 
     saveResult: async (sampleId, testMethodId, resultData, userId) => {

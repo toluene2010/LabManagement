@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { useMasterDataStore } from '../stores/masterDataStore';
 import { useSchemaStore } from '../stores/schemaStore';
-import { Plus, Search, Filter, MoreVertical, FileText, Edit2, Download, ChevronDown } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, FileText, Edit2, Download, ChevronDown, Trash2 } from 'lucide-react';
 import { ProductModal } from '../components/ProductModal';
 import { Product } from '../types';
 import { downloadProductImportTemplateCSV, downloadProductImportTemplateXLSX } from '../utils/excelTemplateGenerator';
 
 export const ProductMaster: React.FC = () => {
-    const { products } = useMasterDataStore();
+    const { products, deleteProduct } = useMasterDataStore();
     const { schemas } = useSchemaStore();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     // Filter products based on search
     const filteredProducts = products.filter(p =>
@@ -24,6 +25,14 @@ export const ProductMaster: React.FC = () => {
     const handleEditProduct = (product: Product) => {
         setSelectedProduct(product);
         setIsModalOpen(true);
+        setActiveDropdown(null);
+    };
+
+    const handleDeleteProduct = async (productId: string, productName: string) => {
+        if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+            await deleteProduct(productId);
+            setActiveDropdown(null);
+        }
     };
 
     const handleCloseModal = () => {
@@ -152,20 +161,40 @@ export const ProductMaster: React.FC = () => {
                                         <p className="text-xs text-slate-500">{product.code}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="relative">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleEditProduct(product);
+                                            setActiveDropdown(activeDropdown === product.id ? null : product.id);
                                         }}
-                                        className="p-1 text-slate-400 hover:text-primary-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                        title="Edit Product"
+                                        className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                                     >
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                         <MoreVertical className="w-5 h-5" />
                                     </button>
+                                    {activeDropdown === product.id && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-10">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditProduct(product);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-t-lg flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                                Edit Product
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteProduct(product.id, product.name);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-b-lg flex items-center gap-2 text-danger-600 dark:text-danger-400"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                Delete Product
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

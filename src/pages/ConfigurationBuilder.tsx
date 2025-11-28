@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSchemaStore } from '../stores/schemaStore';
 import { Plus, Trash2, Save, GripVertical, Type, Settings2 } from 'lucide-react';
 import { FieldType, EntitySchema, FieldSchema } from '../types';
+import { useAuthStore } from '../stores/authStore';
 
 export const ConfigurationBuilder: React.FC = () => {
-    const { schemas, addSchema, updateSchema, deleteSchema } = useSchemaStore();
+    const { schemas, fetchSchemas, addSchema, updateSchema, deleteSchema, isLoading } = useSchemaStore();
+    const { user } = useAuthStore();
     const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
@@ -14,6 +16,11 @@ export const ConfigurationBuilder: React.FC = () => {
         description: '',
         fields: []
     });
+
+    // Fetch schemas on mount
+    useEffect(() => {
+        fetchSchemas();
+    }, [fetchSchemas]);
 
     const handleCreateNew = () => {
         setFormData({
@@ -59,17 +66,40 @@ export const ConfigurationBuilder: React.FC = () => {
         }));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!formData.name) return;
 
         if (selectedSchemaId && !isCreating) {
-            updateSchema(selectedSchemaId, formData);
+            await updateSchema(selectedSchemaId, formData);
         } else {
-            const newId = addSchema(formData as any);
-            setSelectedSchemaId(newId);
-            setIsCreating(false);
+            const schemaToAdd = {
+                ...formData,
+                version: formData.version || '1.0',
+                createdBy: user?.id || 'system'
+            } as Omit<EntitySchema, 'id' | 'createdAt' | 'updatedAt'>;
+
+            const newId = await addSchema(schemaToAdd);
+            if (newId) {
+                setSelectedSchemaId(newId);
+                setIsCreating(false);
+            }
         }
     };
+
+    const handleDelete = async () => {
+        if (!selectedSchemaId) return;
+
+        if (confirm('Are you sure you want to delete this schema? This action cannot be undone.')) {
+            await deleteSchema(selectedSchemaId);
+            setSelectedSchemaId(null);
+            setFormData({
+                name: '',
+                description: '',
+                fields: []
+            });
+        }
+    };
+
 
     const fieldTypes: { value: FieldType; label: string }[] = [
         { value: 'text', label: 'Text Input' },
@@ -127,20 +157,20 @@ export const ConfigurationBuilder: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 {!isCreating && (
                                     <button
-                                        onClick={() => {
-                                            if (confirm('Are you sure you want to delete this schema?')) {
-                                                deleteSchema(selectedSchemaId!);
-                                                setSelectedSchemaId(null);
-                                            }
-                                        }}
+                                        onClick={handleDelete}
                                         className="btn btn-danger p-2"
+                                        disabled={isLoading}
                                     >
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                 )}
-                                <button onClick={handleSave} className="btn btn-primary flex items-center gap-2">
+                                <button
+                                    onClick={handleSave}
+                                    className="btn btn-primary flex items-center gap-2"
+                                    disabled={isLoading}
+                                >
                                     <Save className="w-4 h-4" />
-                                    Save Changes
+                                    {isLoading ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </div>

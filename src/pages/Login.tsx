@@ -59,12 +59,14 @@ export const Login: React.FC = () => {
                                 </div>
                                 <input
                                     id="username"
+                                    name="email"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="input pl-10"
                                     placeholder="Enter your email"
                                     required
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>
@@ -77,12 +79,14 @@ export const Login: React.FC = () => {
                                 </div>
                                 <input
                                     id="password"
+                                    name="password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="input pl-10"
                                     placeholder="••••••••"
                                     required
+                                    autoComplete="current-password"
                                 />
                             </div>
                         </div>

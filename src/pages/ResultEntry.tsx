@@ -199,6 +199,8 @@ export const ResultEntry: React.FC = () => {
 
                                             {field.type === 'text' && (
                                                 <input
+                                                    id={`result-${field.id}`}
+                                                    name={field.name}
                                                     type="text"
                                                     value={resultData[field.name] || ''}
                                                     onChange={(e) => handleInputChange(field.name, e.target.value)}
@@ -209,6 +211,8 @@ export const ResultEntry: React.FC = () => {
 
                                             {field.type === 'number' && (
                                                 <input
+                                                    id={`result-${field.id}`}
+                                                    name={field.name}
                                                     type="number"
                                                     value={resultData[field.name] || ''}
                                                     onChange={(e) => handleInputChange(field.name, parseFloat(e.target.value))}
