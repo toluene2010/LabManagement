@@ -55,9 +55,13 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
     addSchema: async (schema) => {
         set({ isLoading: true, error: null });
         try {
+            // Generate a unique ID (since DB column is TEXT and doesn't auto-generate)
+            const newId = `schema_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
             const { data, error } = await supabase
                 .from('schemas')
                 .insert([{
+                    id: newId,
                     name: schema.name,
                     description: schema.description,
                     version: schema.version,
