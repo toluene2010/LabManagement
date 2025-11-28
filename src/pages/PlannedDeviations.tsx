@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { usePlannedDeviationStore, PlannedDeviation } from '../stores/plannedDeviationStore';
 import { useAuthStore } from '../stores/authStore';
 import {
-    Plus, FileText, CheckCircle2, XCircle, AlertTriangle,
-    BarChart3, Calendar, User, ArrowRight, Search, Filter
+    Plus, FileText, XCircle,
+    BarChart3
 } from 'lucide-react';
 import {
     Chart as ChartJS,
