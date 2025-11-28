@@ -167,7 +167,7 @@ export const ResultEntry: React.FC = () => {
                                         )}
 
                                         {/* Approve Button for QA Managers */}
-                                        {(user?.role === 'qa_manager' || user?.role === 'admin') && (currentResult?.status === 'reviewed' || currentResult?.status === 'completed') && (
+                                        {(user?.role === 'qa_manager' || user?.role === 'admin') && currentResult?.status === 'reviewed' && (
                                             <button onClick={handleApprove} className="btn btn-success flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4" />
                                                 Approve Result
