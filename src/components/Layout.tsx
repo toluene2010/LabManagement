@@ -40,6 +40,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { name: 'Laboratory Management', href: '/laboratory', icon: FlaskConical },
         { name: 'Analytics & CPK', href: '/analytics', icon: TrendingUp },
         { name: 'Deviations & CAPA', href: '/deviations', icon: AlertTriangle },
+        { name: 'Planned Deviations', href: '/planned-deviations', icon: ClipboardList },
         { name: 'Reports', href: '/reports', icon: FileText },
         { name: 'Audit Trail', href: '/audit', icon: History },
         { name: 'Data Schemas', href: '/config', icon: Settings },

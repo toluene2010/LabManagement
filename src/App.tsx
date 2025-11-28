@@ -10,6 +10,7 @@ import { AuditTrail } from './pages/AuditTrail';
 import { ConfigurationBuilder } from './pages/ConfigurationBuilder';
 import { Analytics } from './pages/Analytics';
 import { Deviations } from './pages/Deviations';
+import { PlannedDeviations } from './pages/PlannedDeviations';
 import { Reports } from './pages/Reports';
 import { AdminSettings } from './pages/AdminSettings';
 import { StabilityStudies } from './pages/StabilityStudies';
@@ -47,6 +48,7 @@ function App() {
                                 <Route path="/results/:sampleId" element={<ResultEntry />} />
                                 <Route path="/analytics" element={<Analytics />} />
                                 <Route path="/deviations" element={<Deviations />} />
+                                <Route path="/planned-deviations" element={<PlannedDeviations />} />
                                 <Route path="/stability" element={<StabilityStudies />} />
                                 <Route path="/rd-studies" element={<RDStudies />} />
                                 <Route path="/laboratory" element={<LaboratoryManagement />} />
