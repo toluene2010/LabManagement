@@ -278,6 +278,14 @@ export const useSampleStore = create<SampleState>((set, get) => ({
                 .eq('id', resultRow.id);
 
             if (error) throw error;
+
+            // Update sample status to 'under_review' if not already approved
+            await supabase
+                .from('samples')
+                .update({ status: 'under_review' })
+                .eq('id', sampleId)
+                .neq('status', 'approved'); // Don't downgrade if already approved
+
             await get().fetchSamples();
         } catch (error: any) {
             console.error('Error reviewing result:', error);
@@ -305,6 +313,23 @@ export const useSampleStore = create<SampleState>((set, get) => ({
                 .eq('id', resultRow.id);
 
             if (error) throw error;
+
+            // Check if all results for this sample are approved
+            const { data: allResults, error: resultsError } = await supabase
+                .from('test_results')
+                .select('status')
+                .eq('sample_id', sampleId);
+
+            if (!resultsError && allResults) {
+                const allApproved = allResults.every(r => r.status === 'approved');
+                if (allApproved) {
+                    await supabase
+                        .from('samples')
+                        .update({ status: 'approved' })
+                        .eq('id', sampleId);
+                }
+            }
+
             await get().fetchSamples();
         } catch (error: any) {
             console.error('Error approving result:', error);
